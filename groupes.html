@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groupes - Application de Messagerie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+        }
+        
+        body {
+            background-color: #0a1014;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .chat-app {
+            width: 100%;
+            height: 100vh;
+            max-width: 500px;
+            background-color: #111b21;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* En-tête de l'application */
+        .app-header {
+            padding: 12px 16px;
+            background-color: #202c33;
+            color: #e9edef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .header-icons {
+            display: flex;
+            gap: 20px;
+            font-size: 18px;
+            color: #aebac1;
+            cursor: pointer;
+        }
+        
+        /* Barre de recherche */
+        .search-container {
+            padding: 10px 16px;
+            background-color: #111b21;
+            border-bottom: 1px solid #222d34;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            border: none;
+            background-color: #202c33;
+            color: #e9edef;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-box::placeholder {
+            color: #8696a0;
+        }
+        
+        /* Liste des groupes */
+        .groups-container {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #111b21;
+            height: calc(100vh - 80px);
+        }
+        
+        .group {
+            display: flex;
+            padding: 12px 16px;
+            border-bottom: 1px solid #222d34;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .group:hover {
+            background-color: #1a242a;
+        }
+        
+        .group.active {
+            background-color: #2a3942;
+        }
+        
+        .group-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #075e54, #128c7e);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .group-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .group-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #e9edef;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .group-time {
+            font-size: 12px;
+            color: #8696a0;
+            font-weight: 400;
+        }
+        
+        .group-last-message {
+            font-size: 14px;
+            color: #8696a0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+        }
+        
+        .no-message {
+            font-style: italic;
+            color: #8696a0;
+        }
+        
+        /* Barre de défilement */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1f2c33;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #374248;
+            border-radius: 3px;
+        }
+        
+        /* Indicateur de nouveau message */
+        .unread-badge {
+            background-color: #00a884;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        /* Message d'état lorsqu'il n'y a pas de messages */
+        .status-message {
+            text-align: center;
+            color: #8696a0;
+            font-size: 13px;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #182229;
+            border-radius: 8px;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 400;
+        }
+        
+        /* Dialog styles */
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .dialog {
+            background-color: #2a3942;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            color: #e9edef;
+        }
+        
+        .dialog h2 {
+            margin-bottom: 16px;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .dialog input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: #202c33;
+            color: #e9edef;
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+        }
+        
+        .dialog input::placeholder {
+            color: #8696a0;
+        }
+        
+        .dialog button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background-color: #00a884;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .dialog button:hover {
+            background-color: #06cf9f;
+        }
+        
+        .avatar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #202c33;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .avatar-placeholder {
+            font-size: 40px;
+            color: #8696a0;
+        }
+        
+        .avatar-upload {
+            background-color: #202c33;
+            color: #8696a0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .avatar-upload:hover {
+            background-color: #2a3942;
+        }
+        
+        .avatar-upload input {
+            display: none;
+        }
+        
+        .user-profile-dialog {
+            text-align: center;
+        }
+        
+        .user-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            overflow: hidden;
+            background-color: #202c33;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        
+        .close-dialog {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            color: #8696a0;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .dialog-message {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #8696a0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-app">
+        <!-- En-tête de l'application -->
+        <div class="app-header">
+            <div class="app-title">Groupes</div>
+            <div class="header-icons">
+                <i class="fas fa-search"></i>
+                <i class="fas fa-ellipsis-v" id="menuIcon"></i>
+            </div>
+        </div>
+        
+        <!-- Barre de recherche -->
+        <div class="search-container">
+            <input type="text" class="search-box" placeholder="Rechercher un groupe...">
+        </div>
+        
+        <!-- Liste des groupes -->
+        <div class="groups-container" id="groupsContainer">
+            <!-- Les groupes seront ajoutés dynamiquement ici -->
+        </div>
+    </div>
+
+    <!-- Dialog pour l'inscription de l'utilisateur -->
+    <div class="dialog-overlay" id="userRegistrationDialog">
+        <div class="dialog">
+            <span class="close-dialog" id="closeRegistrationDialog">&times;</span>
+            <h2>Entrez votre nom</h2>
+            <div class="avatar-container">
+                <div class="avatar-preview" id="avatarPreview">
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                <label class="avatar-upload">
+                    Ajouter une photo
+                    <input type="file" id="avatarInput" accept="image/*">
+                </label>
+            </div>
+            <input type="text" id="userNameInput" placeholder="Votre nom">
+            <button id="registerUserBtn">Continuer</button>
+        </div>
+    </div>
+
+    <!-- Dialog pour afficher le profil de l'utilisateur -->
+    <div class="dialog-overlay" id="userProfileDialog" style="display: none;">
+        <div class="dialog user-profile-dialog">
+            <span class="close-dialog" id="closeProfileDialog">&times;</span>
+            <h2>Votre profil</h2>
+            <div class="user-avatar" id="userProfileAvatar">
+                <div class="avatar-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="user-name" id="userProfileName">Nom d'utilisateur</div>
+            <button id="logoutBtn">Se déconnecter</button>
+        </div>
+    </div>
+
+    <!-- Dialog pour demander l'inscription -->
+    <div class="dialog-overlay" id="requireRegistrationDialog" style="display: none;">
+        <div class="dialog">
+            <h2>Inscription requise</h2>
+            <div class="dialog-message">
+                Vous devez vous inscrire pour accéder aux groupes.
+            </div>
+            <button id="goToRegistrationBtn">S'inscrire maintenant</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOYAQ6XMLYeqpn_JQwZUTZEMre5UX3NfU",
+            authDomain: "megastore-dc68d.firebaseapp.com",
+            databaseURL: "https://megastore-dc68d-default-rtdb.firebaseio.com",
+            projectId: "megastore-dc68d",
+            storageBucket: "megastore-dc68d.appspot.com",
+            messagingSenderId: "600548950505",
+            appId: "1:600548950505:web:08248cdb2a1d8e5b0dcb78",
+            measurementId: "G-RRL5NF4LGY"
+        };
+
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Générer un ID unique pour l'appareil
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        // Données des groupes
+        const groups = [
+            {
+                code: "IP",
+                name: "Infirmier polyvalent",
+                lastMessage: "Jfjdj",
+                time: "22:32",
+                unread: 0
+            },
+            {
+                code: "SM",
+                name: "Infirmier en santé mentale",
+                lastMessage: "La performance d'un système de financement de la santé se mesure à sa capacité de:",
+                time: "22:36",
+                unread: 1
+            },
+            {
+                code: "US",
+                name: "Infirmier en soins d'urgence et soins intensifs",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "AR",
+                name: "Infirmier en anesthésie-réanimation",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "DN",
+                name: "Diététique / nutrition",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "SS",
+                name: "Statistiques sanitaires",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "LB",
+                name: "Laboratoire",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "RE",
+                name: "Radiologie • Santé de l'environnement",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "PP",
+                name: "Préparateur en pharmacie",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "SF",
+                name: "Sage-femme",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "AM",
+                name: "Assistance médico-sociale",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "PM",
+                name: "Psychomotricité",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "KT",
+                name: "Kinésithérapie",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "OR",
+                name: "Orthophonie",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "OP",
+                name: "Orthoptie",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            },
+            {
+                code: "ET",
+                name: "Ergothérapie",
+                lastMessage: "",
+                time: "",
+                unread: 0
+            }
+        ];
+
+        // Variables globales
+        let currentUser = null;
+        let selectedGroup = null;
+        const deviceId = getDeviceId();
+
+        // Initialisation de l'application
+        document.addEventListener('DOMContentLoaded', function() {
+            const groupsContainer = document.getElementById('groupsContainer');
+            const userRegistrationDialog = document.getElementById('userRegistrationDialog');
+            const userProfileDialog = document.getElementById('userProfileDialog');
+            const requireRegistrationDialog = document.getElementById('requireRegistrationDialog');
+            const closeRegistrationDialog = document.getElementById('closeRegistrationDialog');
+            const closeProfileDialog = document.getElementById('closeProfileDialog');
+            const registerUserBtn = document.getElementById('registerUserBtn');
+            const userNameInput = document.getElementById('userNameInput');
+            const avatarInput = document.getElementById('avatarInput');
+            const avatarPreview = document.getElementById('avatarPreview');
+            const menuIcon = document.getElementById('menuIcon');
+            const userProfileAvatar = document.getElementById('userProfileAvatar');
+            const userProfileName = document.getElementById('userProfileName');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const goToRegistrationBtn = document.getElementById('goToRegistrationBtn');
+            
+            let avatarFile = null;
+            
+            // Vérifier si l'utilisateur est déjà enregistré
+            checkUserRegistration();
+            
+            // Événement pour fermer le dialog d'inscription
+            closeRegistrationDialog.addEventListener('click', () => {
+                userRegistrationDialog.style.display = 'none';
+            });
+            
+            // Événement pour fermer le dialog de profil
+            closeProfileDialog.addEventListener('click', () => {
+                userProfileDialog.style.display = 'none';
+            });
+            
+            // Événement pour le bouton d'inscription
+            registerUserBtn.addEventListener('click', registerUser);
+            
+            // Événement pour le bouton d'inscription depuis le dialog de groupe
+            goToRegistrationBtn.addEventListener('click', () => {
+                requireRegistrationDialog.style.display = 'none';
+                userRegistrationDialog.style.display = 'flex';
+            });
+            
+            // Événement pour l'upload d'avatar
+            avatarInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    avatarFile = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Avatar">`;
+                    };
+                    
+                    reader.readAsDataURL(avatarFile);
+                }
+            });
+            
+            // Événement pour le menu (trois points)
+            menuIcon.addEventListener('click', showUserProfile);
+            
+            // Événement pour le bouton de déconnexion
+            logoutBtn.addEventListener('click', logoutUser);
+            
+            // Fonction pour vérifier l'enregistrement de l'utilisateur
+            function checkUserRegistration() {
+                const userRef = database.ref('users/' + deviceId);
+                
+                userRef.once('value')
+                    .then((snapshot) => {
+                        if (snapshot.exists()) {
+                            // L'utilisateur est déjà enregistré
+                            currentUser = snapshot.val();
+                            userRegistrationDialog.style.display = 'none';
+                            renderGroups();
+                        } else {
+                            // Afficher le dialog d'inscription
+                            userRegistrationDialog.style.display = 'flex';
+                            renderGroups();
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Erreur lors de la vérification de l'utilisateur:", error);
+                        userRegistrationDialog.style.display = 'flex';
+                        renderGroups();
+                    });
+            }
+            
+            // Fonction pour enregistrer l'utilisateur
+            function registerUser() {
+                const userName = userNameInput.value.trim();
+                
+                if (!userName) {
+                    alert('Veuillez entrer votre nom');
+                    return;
+                }
+                
+                const userData = {
+                    name: userName,
+                    deviceId: deviceId,
+                    registrationDate: new Date().toISOString()
+                };
+                
+                // Si une image a été sélectionnée, la convertir en base64
+                if (avatarFile) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        userData.avatar = e.target.result;
+                        saveUserToDatabase(userData);
+                    };
+                    
+                    reader.readAsDataURL(avatarFile);
+                } else {
+                    saveUserToDatabase(userData);
+                }
+            }
+            
+            // Fonction pour sauvegarder l'utilisateur dans la base de données
+            function saveUserToDatabase(userData) {
+                const userRef = database.ref('users/' + deviceId);
+                
+                userRef.set(userData)
+                    .then(() => {
+                        currentUser = userData;
+                        userRegistrationDialog.style.display = 'none';
+                        
+                        // Si un groupe a été sélectionné avant l'inscription, l'ouvrir
+                        if (selectedGroup) {
+                            openGroup(selectedGroup);
+                            selectedGroup = null;
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Erreur lors de l'enregistrement de l'utilisateur:", error);
+                        alert("Erreur lors de l'enregistrement. Veuillez réessayer.");
+                    });
+            }
+            
+            // Fonction pour afficher le profil de l'utilisateur
+            function showUserProfile() {
+                if (currentUser) {
+                    userProfileName.textContent = currentUser.name;
+                    
+                    if (currentUser.avatar) {
+                        userProfileAvatar.innerHTML = `<img src="${currentUser.avatar}" alt="Avatar">`;
+                    } else {
+                        userProfileAvatar.innerHTML = '<div class="avatar-placeholder"><i class="fas fa-user"></i></div>';
+                    }
+                    
+                    userProfileDialog.style.display = 'flex';
+                } else {
+                    // Si l'utilisateur n'est pas connecté, afficher le dialog d'inscription
+                    userRegistrationDialog.style.display = 'flex';
+                }
+            }
+            
+            // Fonction pour déconnecter l'utilisateur
+            function logoutUser() {
+                const userRef = database.ref('users/' + deviceId);
+                
+                userRef.remove()
+                    .then(() => {
+                        currentUser = null;
+                        userProfileDialog.style.display = 'none';
+                        userRegistrationDialog.style.display = 'flex';
+                        
+                        // Réinitialiser le formulaire
+                        userNameInput.value = '';
+                        avatarPreview.innerHTML = '<div class="avatar-placeholder"><i class="fas fa-user"></i></div>';
+                        avatarFile = null;
+                    })
+                    .catch((error) => {
+                        console.error("Erreur lors de la déconnexion:", error);
+                    });
+            }
+            
+            // Fonction pour ouvrir un groupe
+            function openGroup(group) {
+                // Enlever la classe active de tous les groupes
+                document.querySelectorAll('.group').forEach(g => {
+                    g.classList.remove('active');
+                });
+                
+                // Ajouter la classe active au groupe cliqué
+                const groupElement = document.querySelector(`[data-group-code="${group.code}"]`);
+                if (groupElement) {
+                    groupElement.classList.add('active');
+                }
+                
+                // Rediriger vers la page de conversation du groupe
+                // window.location.href = `chat.html?group=${group.code}`;
+                alert(`Ouvrir la conversation du groupe: ${group.name}`);
+            }
+            
+            // Fonction pour gérer le clic sur un groupe
+            function handleGroupClick(group) {
+                if (currentUser) {
+                    // Si l'utilisateur est connecté, ouvrir le groupe
+                    openGroup(group);
+                } else {
+                    // Si l'utilisateur n'est pas connecté, afficher le dialog d'inscription
+                    selectedGroup = group;
+                    requireRegistrationDialog.style.display = 'flex';
+                }
+            }
+            
+            // Affichage des groupes
+            function renderGroups() {
+                groupsContainer.innerHTML = '';
+                
+                if (groups.length === 0) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'status-message';
+                    emptyMessage.textContent = 'Aucun groupe disponible';
+                    groupsContainer.appendChild(emptyMessage);
+                    return;
+                }
+                
+                groups.forEach(group => {
+                    const groupElement = document.createElement('div');
+                    groupElement.className = 'group';
+                    groupElement.setAttribute('data-group-code', group.code);
+                    
+                    let lastMessageDisplay = group.lastMessage;
+                    if (!group.lastMessage) {
+                        lastMessageDisplay = '<span class="no-message">Aucun message</span>';
+                    }
+                    
+                    let unreadBadge = '';
+                    if (group.unread > 0) {
+                        unreadBadge = `<div class="unread-badge">${group.unread}</div>`;
+                    }
+                    
+                    groupElement.innerHTML = `
+                        <div class="group-avatar">${group.code}</div>
+                        <div class="group-info">
+                            <div class="group-name">
+                                <span>${group.name}</span>
+                                <span class="group-time">${group.time}</span>
+                            </div>
+                            <div class="group-last-message">
+                                ${lastMessageDisplay}
+                                ${unreadBadge}
+                            </div>
+                        </div>
+                    `;
+                    
+                    groupElement.addEventListener('click', () => {
+                        handleGroupClick(group);
+                    });
+                    
+                    groupsContainer.appendChild(groupElement);
+                });
+            }
+            
+            // Initialisation
+            renderGroups();
+            
+            // Fonction de recherche
+            const searchBox = document.querySelector('.search-box');
+            searchBox.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const groupElements = document.querySelectorAll('.group');
+                
+                let hasResults = false;
+                
+                groupElements.forEach(groupElement => {
+                    const groupName = groupElement.querySelector('.group-name span').textContent.toLowerCase();
+                    if (groupName.includes(searchTerm)) {
+                        groupElement.style.display = 'flex';
+                        hasResults = true;
+                    } else {
+                        groupElement.style.display = 'none';
+                    }
+                });
+                
+                // Afficher un message si aucun résultat n'est trouvé
+                if (!hasResults && searchTerm) {
+                    groupsContainer.innerHTML = '<div class="status-message">Aucun groupe trouvé</div>';
+                } else if (searchTerm === '') {
+                    renderGroups();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

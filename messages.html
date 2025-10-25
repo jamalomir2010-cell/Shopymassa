@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application de Messagerie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+        }
+        
+        body {
+            background-color: #0a1014;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .chat-app {
+            width: 100%;
+            height: 100vh;
+            max-width: 500px;
+            background-color: #111b21;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* En-tête de la conversation */
+        .chat-header {
+            padding: 12px 16px;
+            background-color: #202c33;
+            color: #e9edef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        
+        .contact-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .contact-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #075e54, #128c7e);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .contact-details h3 {
+            font-size: 17px;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+        
+        .contact-details p {
+            font-size: 13px;
+            opacity: 0.8;
+            color: #8696a0;
+            font-weight: 400;
+        }
+        
+        .header-icons {
+            display: flex;
+            gap: 25px;
+            font-size: 20px;
+            color: #aebac1;
+        }
+        
+        /* Zone des messages - MODIFIÉ */
+        .messages-container {
+            flex: 1;
+            padding: 15px 10px;
+            overflow-y: auto;
+            background-color: #0b141a;
+            background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23121c22' fill-opacity='0.4'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            height: calc(100vh - 124px); /* Ajustement pour correspondre au parent */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            max-width: 75%;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            position: relative;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.4;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+        
+        .received {
+            align-self: flex-start;
+            background-color: #202c33;
+            color: #e9edef;
+            border-top-left-radius: 0;
+        }
+        
+        .sent {
+            align-self: flex-end;
+            background-color: #005c4b;
+            color: #e9edef;
+            border-top-right-radius: 0;
+            margin-left: auto;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #8696a0;
+            text-align: right;
+            margin-top: 4px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 3px;
+            font-weight: 400;
+        }
+        
+        .message-time i {
+            font-size: 14px;
+        }
+        
+        /* Zone de saisie de message - MODIFIÉ */
+        .message-input-container {
+            padding: 10px 15px;
+            background-color: #202c33;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 62px;
+            flex-shrink: 0;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 20px;
+            border: none;
+            font-size: 15px;
+            outline: none;
+            background-color: #2a3942;
+            color: #e9edef;
+            max-height: 45px;
+            font-weight: 400;
+        }
+        
+        .message-input::placeholder {
+            color: #8696a0;
+        }
+        
+        /* Boutons à droite - NOUVEAU STYLE */
+        .right-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .attachment-button, .emoji-button {
+            color: #8696a0;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .attachment-button:active, .emoji-button:active {
+            transform: scale(0.9);
+        }
+        
+        .send-button {
+            background-color: #005c4b;
+            color: #e9edef;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .send-button:active {
+            background-color: #0a7c68;
+            transform: scale(0.95);
+        }
+        
+        /* Barre de défilement */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1f2c33;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #374248;
+            border-radius: 3px;
+        }
+        
+        /* Message de bienvenue */
+        .welcome-message {
+            text-align: center;
+            color: #8696a0;
+            font-size: 13px;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #182229;
+            border-radius: 8px;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 400;
+        }
+        
+        /* Indicateur de frappe */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #202c33;
+            border-radius: 18px;
+            width: fit-content;
+            margin-bottom: 12px;
+            border-top-left-radius: 0;
+            color: #8696a0;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+            margin-left: 8px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #8696a0;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        /* Effets de clic */
+        .contact-avatar, .header-icons i {
+            transition: transform 0.2s;
+        }
+        
+        .contact-avatar:active, .header-icons i:active {
+            transform: scale(0.9);
+        }
+        
+        /* Cacher le bouton microphone et afficher le bouton d'envoi lors de la frappe */
+        .mic-button {
+            display: none;
+        }
+        
+        /* Design du bouton d'envoi */
+        .send-button {
+            display: flex;
+        }
+        
+        .message-input:valid ~ .right-buttons .send-button {
+            display: flex;
+        }
+        
+        .message-input:valid ~ .right-buttons .attachment-button,
+        .message-input:valid ~ .right-buttons .emoji-button {
+            display: none;
+        }
+        
+        /* Icônes de statut pour les messages envoyés */
+        .status-icons {
+            display: flex;
+            margin-left: 5px;
+        }
+        
+        /* Messages de date */
+        .date-divider {
+            text-align: center;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .date-divider span {
+            background-color: #182229;
+            color: #8696a0;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 400;
+        }
+        
+        /* Indicateur en ligne */
+        .online-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: #00ff7f;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px solid #202c33;
+        }
+        
+        .avatar-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        /* Afficher les boutons d'attachement et d'emoji quand le champ est vide */
+        .message-input:placeholder-shown ~ .right-buttons .attachment-button,
+        .message-input:placeholder-shown ~ .right-buttons .emoji-button {
+            display: block;
+        }
+        
+        .message-input:placeholder-shown ~ .right-buttons .send-button {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-app">
+        <!-- En-tête de la conversation -->
+        <div class="chat-header">
+            <div class="contact-info">
+                <div class="avatar-container">
+                    <div class="contact-avatar">M</div>
+                    <div class="online-indicator"></div>
+                </div>
+                <div class="contact-details">
+                    <h3>Marie Dubois</h3>
+                    <p>En ligne</p>
+                </div>
+            </div>
+            <div class="header-icons">
+                <i class="fas fa-search"></i>
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+        </div>
+        
+        <!-- Zone des messages -->
+        <div class="messages-container" id="messagesContainer">
+            <!-- Les messages seront ajoutés dynamiquement ici -->
+        </div>
+        
+        <!-- Zone de saisie de message - MODIFIÉ -->
+        <div class="message-input-container">
+            <input type="text" class="message-input" placeholder="Tapez un message..." id="messageInput">
+            <div class="right-buttons">
+                <i class="fas fa-paperclip attachment-button"></i>
+                <i class="far fa-smile emoji-button"></i>
+                <i class="fas fa-microphone mic-button"></i>
+                <button class="send-button" id="sendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données des messages initiaux
+        const initialMessages = [
+            { text: "Salut, comment ça va ?", time: "10:25", sent: false },
+            { text: "Je vais bien, merci ! Et toi ?", time: "10:26", sent: true },
+            { text: "Très bien aussi, merci. As-tu terminé le projet ?", time: "10:28", sent: false },
+            { text: "Oui, je l'ai terminé hier. Je te l'envoie maintenant.", time: "10:30", sent: true },
+            { text: "Super ! Peux-tu me l'envoyer avant midi ?", time: "10:31", sent: false },
+            { text: "Bien sûr, je l'envoie dans 10 minutes", time: "10:32", sent: true },
+            { text: "Parfait, merci beaucoup !", time: "10:33", sent: false },
+            { text: "De rien, c'est normal entre collègues", time: "10:34", sent: true },
+            { text: "Tu veux qu'on déjeune ensemble aujourd'hui ?", time: "10:35", sent: false },
+            { text: "Avec plaisir ! À 13h à la cafétéria ?", time: "10:36", sent: true },
+            { text: "Parfait, à tout à l'heure !", time: "10:37", sent: false }
+        ];
+
+        // Initialisation de l'application
+        document.addEventListener('DOMContentLoaded', function() {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const attachmentButton = document.querySelector('.attachment-button');
+            const emojiButton = document.querySelector('.emoji-button');
+            
+            // Affichage des messages initiaux
+            function renderMessages() {
+                messagesContainer.innerHTML = '';
+                
+                // Ajout du message de bienvenue
+                const welcomeMsg = document.createElement('div');
+                welcomeMsg.className = 'welcome-message';
+                welcomeMsg.textContent = 'Les messages sont chiffrés de bout en bout. Personne en dehors de cette conversation ne peut les lire.';
+                messagesContainer.appendChild(welcomeMsg);
+                
+                // Ajout des messages
+                initialMessages.forEach(message => {
+                    addMessageToChat(message.text, message.time, message.sent);
+                });
+                
+                // Défilement vers le bas pour voir les messages les plus récents
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // Ajout d'un message à la conversation
+            function addMessageToChat(text, time, isSent) {
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${isSent ? 'sent' : 'received'}`;
+                
+                let statusIcons = '';
+                if (isSent) {
+                    statusIcons = '<div class="status-icons"><i class="fas fa-check-double" style="color: #53bdeb;"></i></div>';
+                }
+                
+                messageElement.innerHTML = `
+                    <div>${text}</div>
+                    <div class="message-time">${time} ${statusIcons}</div>
+                `;
+                messagesContainer.appendChild(messageElement);
+                
+                // Défilement vers le bas
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // Envoi d'un nouveau message
+            function sendMessage() {
+                const messageText = messageInput.value.trim();
+                if (messageText === '') return;
+                
+                // Ajout du nouveau message
+                const now = new Date();
+                const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                addMessageToChat(messageText, timeString, true);
+                
+                // Effacement du champ de saisie
+                messageInput.value = '';
+                
+                // Simulation d'une réponse automatique après 1-3 secondes
+                setTimeout(() => {
+                    const replies = [
+                        "D'accord",
+                        "Merci",
+                        "Je comprends",
+                        "Je te réponds plus tard",
+                        "Peux-tu préciser ?",
+                        "Super !",
+                        "Je vais le faire",
+                        "Pouvons-nous nous rencontrer demain ?",
+                        "Excellent !",
+                        "Je suis d'accord"
+                    ];
+                    const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                    
+                    // Ajout de l'indicateur de frappe
+                    const typingIndicator = document.createElement('div');
+                    typingIndicator.className = 'typing-indicator';
+                    typingIndicator.innerHTML = `
+                        <span>Marie est en train d'écrire</span>
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    `;
+                    messagesContainer.appendChild(typingIndicator);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    
+                    // Suppression de l'indicateur de frappe et ajout de la réponse après 2 secondes
+                    setTimeout(() => {
+                        typingIndicator.remove();
+                        
+                        const replyTime = `${now.getHours()}:${(now.getMinutes() + 1).toString().padStart(2, '0')}`;
+                        addMessageToChat(randomReply, replyTime, false);
+                    }, 2000);
+                }, Math.random() * 2000 + 1000);
+            }
+            
+            // Fonction pour ajouter une pièce jointe
+            function addAttachment() {
+                // Simulation de l'ajout d'une pièce jointe
+                const now = new Date();
+                const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                addMessageToChat("📎 Fichier joint - image.jpg", timeString, true);
+                
+                // Simulation de réponse
+                setTimeout(() => {
+                    const replyTime = `${now.getHours()}:${(now.getMinutes() + 1).toString().padStart(2, '0')}`;
+                    addMessageToChat("Merci pour la photo ! Elle est magnifique !", replyTime, false);
+                }, 1500);
+            }
+            
+            // Fonction pour ajouter un emoji
+            function addEmoji() {
+                // Simulation de l'ajout d'un emoji
+                const emojis = ["😊", "👍", "❤️", "😂", "🔥", "🎉", "👏", "🙏"];
+                const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                const now = new Date();
+                const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                addMessageToChat(randomEmoji, timeString, true);
+            }
+            
+            // Ajout des écouteurs d'événements
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            attachmentButton.addEventListener('click', addAttachment);
+            emojiButton.addEventListener('click', addEmoji);
+            
+            // Initialisation
+            renderMessages();
+            
+            // Focus automatique sur le champ de saisie
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>
